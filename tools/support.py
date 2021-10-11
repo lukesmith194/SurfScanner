@@ -227,6 +227,7 @@ df_wave_list = [nazare_wave,pipe_wave,fronton_wave,box_wave,pe_wave,ita_wave,pp_
 df_wind_list = [nazare_wind,pipe_wind,fronton_wind,box_wind,pe_wind,ita_wind,pp_wind,mosca_wind,tauro_wind,mundaka_wind]
 spot_list = ["Nazare","Pipeline","Fronton","The Box","Puerto Escondido","Itacoatiara","Padang-Padang","Mosca Point","Tauro","Mundaka"]
 
+
 def find_empties(df_wave_list,df_wind_list,spot_list,start_date,end_date):
     prueba = []
     for i,j,k in zip(df_wave_list,df_wind_list,spot_list):
@@ -234,13 +235,13 @@ def find_empties(df_wave_list,df_wind_list,spot_list,start_date,end_date):
         if spot_num.empty:
             print("empty")
         else:
-            final = pd.DataFrame(spot_num)
-            prueba.append(final)#,wave_fig,wind_fig])
-    finall = pd.concat(prueba)
+            #final = pd.DataFrame(spot_num)
+            prueba.append(spot_num)#,wave_fig,wind_fig])
+    #finall = pd.concat(prueba)
     
     #for i in len(prueba): 
         #return prueba[i][0]
-    return finall
+    return prueba
 
 
 
