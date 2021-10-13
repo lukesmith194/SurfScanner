@@ -16,7 +16,7 @@ def import_map():
 
 
 def import_linegraph():
-    df = pd.read_csv (r'CSV/DF_lat_long.csv')
+    df = pd.read_csv (r'CSV//DF_lat_long.csv')
     return df
 
 def plot_map():
