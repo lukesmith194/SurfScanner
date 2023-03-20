@@ -11,7 +11,7 @@ px.set_mapbox_access_token('pk.eyJ1IjoibHVrZXNtaXRoMTk0IiwiYSI6ImNrdWg1dGw5ejA5b
 
 
 def import_map():
-    data_lat_long = pd.read_csv (r'DF_lat_long.csv')
+    data_lat_long = df = pd.read_csv('/Users/lukesmith/projects/SurfScanner/csv/DF_lat_long.csv')
     return data_lat_long
 
 

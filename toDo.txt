@@ -1,0 +1,16 @@
+Historical
+- - need to clean up Wave height graph
+- - need to add an explanation of the map
+- - need to add an explanation to the wave height graph
+- --------------------------------
+Predictions
+- change the output from a crappy df without a graph something appealing
+
+---------------------------------
+Spots
+- Scrape at least 10 more spots
+-------------------------------
+Home
+
+Expand on the initial explanation
+
