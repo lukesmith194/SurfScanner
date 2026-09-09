@@ -1,9 +1,14 @@
+from pathlib import Path
+
 import streamlit as st
 from PIL import Image
 
 from spots import SPOTS
 
-IMAGES_DIR = "../images"
+# Absolute, not "../images" — that was relative to the process's current
+# working directory, which is trip_planner/ locally (so it happened to
+# work) but the repo root on Streamlit Cloud, breaking the path there.
+IMAGES_DIR = Path(__file__).resolve().parent.parent.parent / "images"
 
 
 def app():
@@ -12,7 +17,7 @@ def app():
         "Welcome to SurfScanner, the perfect platform for surfers to plan "
         "their next surf trip!"
     )
-    st.image(Image.open(f"{IMAGES_DIR}/tauro4.jpeg"), width="stretch")
+    st.image(Image.open(IMAGES_DIR / "tauro4.jpeg"), width="stretch")
     st.write(
         f"This covers {len(SPOTS)} surf spots across Portugal, Spain (mainland, "
         "Basque Country and the Canary Islands), the UK and Ireland — picked because "

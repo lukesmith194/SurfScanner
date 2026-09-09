@@ -8,7 +8,10 @@ from PIL import Image
 import spot_insights as si
 from spots import SPOTS
 
-IMAGES_DIR = "../images"
+# Absolute, not "../images" — that was relative to the process's current
+# working directory, which is trip_planner/ locally (so it happened to work)
+# but the repo root on Streamlit Cloud, breaking the path there.
+IMAGES_DIR = Path(__file__).resolve().parent.parent.parent / "images"
 CREDITS_PATH = Path(__file__).resolve().parent.parent / "image_credits.json"
 IMAGE_CREDITS = json.loads(CREDITS_PATH.read_text()) if CREDITS_PATH.exists() else {}
 CURRENT_MONTH = datetime.date.today().month
@@ -25,7 +28,7 @@ def app():
         st.write(f"### {spot.name} — {spot.country}")
         if spot.image:
             try:
-                st.image(Image.open(f"{IMAGES_DIR}/{spot.image}"), width="stretch")
+                st.image(Image.open(IMAGES_DIR / spot.image), width="stretch")
                 credit = IMAGE_CREDITS.get(Path(spot.image).stem)
                 if credit:
                     st.caption(f"Photo: {credit['artist']} · {credit['license']} · Wikimedia Commons")
