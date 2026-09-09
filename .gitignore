@@ -60,6 +60,10 @@ coverage.xml
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+trip_planner/surfscanner.db
+
+# Streamlit secrets (DATABASE_URL etc.) — never commit these
+.streamlit/secrets.toml
 
 # Flask stuff:
 instance/

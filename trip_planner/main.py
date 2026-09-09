@@ -1,0 +1,64 @@
+import streamlit as st
+
+import auth
+from db import DATABASE_URL, init_db
+from streamlit_pages import account, community, historical, home, predictions, spot_info, trip_planner
+
+st.set_page_config(page_title="SurfScanner", page_icon="🏄")
+
+init_db()
+
+# Dev convenience: auto-log-in as the seeded test account (see
+# seed_demo_data.py) on a fresh session, so Account/Community can be checked
+# without logging in by hand each time. Gated to local dev only (no
+# DATABASE_URL configured) — a real deployment always sets DATABASE_URL (see
+# db.py), so this never fires there. Without that gate, every visitor to a
+# public deployment would land pre-logged-in as the same shared account,
+# able to see and post as "Test Surfer".
+if "user_id" not in st.session_state and DATABASE_URL.startswith("sqlite"):
+    test_user_id = auth.get_user_id_by_email("test@surfscanner.com")
+    if test_user_id:
+        st.session_state["user_id"] = test_user_id
+
+# Streamlit's top navigation renders small and left-packed by default. Blow
+# it up to a full-width bar with bigger tabs — data-testid selectors are
+# part of Streamlit's stable public contract, unlike the st-emotion-cache-*
+# hashes next to them, which are regenerated per build and not safe to target.
+st.markdown(
+    """
+    <style>
+    [data-testid="stHeader"], [data-testid="stToolbar"] {
+        height: 4.5rem;
+    }
+    [data-testid="stToolbar"] .rc-overflow {
+        width: 100%;
+        justify-content: space-evenly;
+    }
+    [data-testid="stTopNavLinkContainer"] {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+    }
+    [data-testid="stTopNavLink"] {
+        font-size: 1.2rem;
+        padding: 0.9rem 1.5rem;
+    }
+    [data-testid="stTopNavLink"] [data-testid="stIconEmoji"] {
+        font-size: 1.4rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+pages = [
+    st.Page(home.app, title="Home", icon="🏠", url_path="home", default=True),
+    st.Page(spot_info.app, title="Spot info", icon="🌊", url_path="spot-info"),
+    st.Page(historical.app, title="Historical", icon="📊", url_path="historical"),
+    st.Page(predictions.app, title="Predictions", icon="🔮", url_path="predictions"),
+    st.Page(trip_planner.app, title="Trip Planner", icon="🧳", url_path="trip-planner"),
+    st.Page(community.app, title="Community", icon="👥", url_path="community"),
+    st.Page(account.app, title="Account", icon="👤", url_path="account"),
+]
+
+st.navigation(pages, position="top").run()

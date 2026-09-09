@@ -1,0 +1,47 @@
+{
+  "supertubos": {
+    "artist": "Bengt Nyman",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Peniche_Portugal_February_2015_16.jpg"
+  },
+  "ericeira": {
+    "artist": "Sky xe",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Ericeira_Surf_Point_4.jpg"
+  },
+  "zarautz": {
+    "artist": "ElviraOliver",
+    "license": "CC BY-SA 3.0 es",
+    "source": "https://commons.wikimedia.org/wiki/File:Zarautzko_surf_sunset.JPG"
+  },
+  "rodiles": {
+    "artist": "Carlos Ram\u00f3n Bonilla\u2026",
+    "license": "CC BY-SA 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Surf_en_el_Sardinero_-_panoramio_(1).jpg"
+  },
+  "elcotillo": {
+    "artist": "Addshore",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Surfing_in_Fuerteventura.JPG"
+  },
+  "fistral": {
+    "artist": "David Gearing",
+    "license": "CC BY-SA 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Newquay_winter_surfing_-_geograph.org.uk_-_1731960.jpg"
+  },
+  "thurso": {
+    "artist": "Dorcas Sinclair",
+    "license": "CC BY-SA 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Thurso_from_the_hill_at_Mountpleasant_-_geograph.org.uk_-_8869.jpg"
+  },
+  "bundoran": {
+    "artist": "Rod Allday",
+    "license": "CC BY-SA 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Surfers_at_Strandhill_-_geograph.org.uk_-_4788971.jpg"
+  },
+  "lahinch": {
+    "artist": "Lukemcurley",
+    "license": "CC BY-SA 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Surfers_After_Surfing_at_Lahinch,_December_2012..JPG"
+  }
+}
