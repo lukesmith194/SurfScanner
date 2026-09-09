@@ -6,7 +6,7 @@ import nav_pages
 from db import DATABASE_URL, init_db
 from streamlit_pages import account, community, historical, home, predictions, spot_info, trip_planner
 
-st.set_page_config(page_title="SurfScanner", page_icon="🏄")
+st.set_page_config(page_title="SurfScanner", page_icon="🏄", layout="wide")
 
 init_db()
 
@@ -42,58 +42,67 @@ if "user_id" not in st.session_state:
 # it up to a full-width bar with bigger tabs — data-testid selectors are
 # part of Streamlit's stable public contract, unlike the st-emotion-cache-*
 # hashes next to them, which are regenerated per build and not safe to target.
+# Colors here are the one deliberate exception to "theme via config.toml, not
+# CSS" (see the developing-with-streamlit skill's design.md) — Streamlit has
+# no native option for nav tab sizing/emphasis, so this narrow injection
+# fills that specific gap. NAV_ACCENT below must match [theme].primaryColor
+# in .streamlit/config.toml; kept as one named constant so the two never
+# drift out of sync.
+NAV_ACCENT = "#0E7C9C"
 st.markdown(
-    """
+    f"""
     <style>
-    [data-testid="stHeader"], [data-testid="stToolbar"] {
+    [data-testid="stHeader"], [data-testid="stToolbar"] {{
         height: 4.5rem;
-    }
-    [data-testid="stToolbar"] .rc-overflow {
+    }}
+    [data-testid="stToolbar"] .rc-overflow {{
         width: 100%;
         justify-content: space-evenly;
-    }
-    [data-testid="stTopNavLinkContainer"] {
+    }}
+    [data-testid="stTopNavLinkContainer"] {{
         flex: 1;
         display: flex;
         justify-content: center;
-    }
-    [data-testid="stTopNavLink"] {
+    }}
+    [data-testid="stTopNavLink"] {{
         font-size: 1.2rem;
         padding: 0.9rem 1.5rem;
-    }
-    [data-testid="stTopNavLink"] [data-testid="stIconEmoji"] {
+    }}
+    [data-testid="stTopNavLink"] [data-testid="stIconMaterial"] {{
         font-size: 1.4rem;
-    }
+    }}
     /* Trip Planner and Community are the app's actual product — emphasize
        their nav tabs specifically. Streamlit renders each stTopNavLink as
        an <a> whose href is the page's url_path, so an attribute selector
        can target one tab without touching the generic stTopNavLink rule
        above (verified against the built frontend JS, which sets
-       href={pageUrl} on this exact element). */
+       href={{pageUrl}} on this exact element). */
     [data-testid="stTopNavLink"][href*="trip-planner"],
-    [data-testid="stTopNavLink"][href*="community"] {
+    [data-testid="stTopNavLink"][href*="community"] {{
         font-weight: 700;
-        color: #ff4b4b;
-        border-bottom: 3px solid #ff4b4b;
-    }
+        color: {NAV_ACCENT};
+        border-bottom: 3px solid {NAV_ACCENT};
+    }}
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-home_page = st.Page(home.app, title="Home", icon="🏠", url_path="home", default=True)
-account_page = st.Page(account.app, title="Account", icon="👤", url_path="account")
-trip_planner_page = st.Page(trip_planner.app, title="Trip Planner", icon="🧳", url_path="trip-planner")
-community_page = st.Page(community.app, title="Community", icon="👥", url_path="community")
+home_page = st.Page(home.app, title="Home", icon=":material/home:", url_path="home", default=True)
+account_page = st.Page(account.app, title="Account", icon=":material/person:", url_path="account")
+trip_planner_page = st.Page(
+    trip_planner.app, title="Trip Planner", icon=":material/luggage:", url_path="trip-planner"
+)
+community_page = st.Page(community.app, title="Community", icon=":material/groups:", url_path="community")
 pages = [
     home_page,
     # Trip Planner and Community are the app's actual product — placed
     # right after Home, ahead of the more reference-y pages below.
     trip_planner_page,
     community_page,
-    st.Page(spot_info.app, title="Spot info", icon="🌊", url_path="spot-info"),
-    st.Page(historical.app, title="Historical", icon="📊", url_path="historical"),
-    st.Page(predictions.app, title="Predictions", icon="🔮", url_path="predictions"),
+    st.Page(spot_info.app, title="Spot info", icon=":material/waves:", url_path="spot-info"),
+    st.Page(historical.app, title="Historical", icon=":material/query_stats:", url_path="historical"),
+    st.Page(predictions.app, title="Predictions", icon=":material/insights:", url_path="predictions"),
     account_page,
 ]
 

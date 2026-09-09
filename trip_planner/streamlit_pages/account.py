@@ -24,7 +24,7 @@ def _login_form():
         email = st.text_input("Email")
         password = st.text_input("Password", type="password")
         remember_me = st.checkbox("Remember me", value=True)
-        submitted = st.form_submit_button("Log in")
+        submitted = st.form_submit_button("Log in", icon=":material/login:", type="primary")
     if submitted:
         result = auth.log_in(email, password)
         if result.ok:
@@ -46,7 +46,7 @@ def _signup_form():
         password = st.text_input("Password", type="password", help="At least 8 characters.")
         home_city = st.selectbox("Where do you usually travel from?", list(DEPARTURE_CITIES.keys()))
         surf_level = st.selectbox("Your surfing level", SURF_LEVELS, index=1)
-        submitted = st.form_submit_button("Create account")
+        submitted = st.form_submit_button("Create account", icon=":material/person_add:", type="primary")
     if submitted:
         result = auth.sign_up(email, password, display_name, home_city, surf_level)
         if result.ok:
@@ -57,24 +57,56 @@ def _signup_form():
             st.error(result.error)
 
 
-def _profile_tab(user_id: int, user):
-    col1, col2 = st.columns([1, 3])
-    with col1:
-        if user.avatar:
-            st.image(user.avatar, width=100)
-        else:
-            st.markdown(
-                "<div style='width:100px;height:100px;border-radius:50%;"
-                "background:#e0e0e0;display:flex;align-items:center;"
-                "justify-content:center;font-size:2.5rem;'>👤</div>",
-                unsafe_allow_html=True,
+def _logged_out_view():
+    st.write(
+        "Create an account to post planned trips and follow other surfers "
+        "on the Community page."
+    )
+    _, center, _ = st.columns([1, 2, 1])
+    with center:
+        with st.container(border=True):
+            login_tab, signup_tab = st.tabs(
+                [
+                    ":material/login: Log in",
+                    ":material/person_add: Sign up",
+                ]
             )
-    with col2:
-        uploaded = st.file_uploader("Profile picture", type=["png", "jpg", "jpeg"], key="avatar_upload")
-        if uploaded is not None:
-            social.update_avatar(user_id, resize_avatar(uploaded.getvalue()))
-            st.rerun()
+            with login_tab:
+                _login_form()
+            with signup_tab:
+                _signup_form()
 
+
+def _avatar(user):
+    if user.avatar:
+        st.image(user.avatar, width=100)
+    else:
+        with st.container(border=True, width=100, height=100, horizontal_alignment="center"):
+            st.markdown("# :material/account_circle:")
+
+
+def _profile_header(user_id: int, user):
+    col1, col2 = st.columns([1, 4], vertical_alignment="center")
+    with col1:
+        _avatar(user)
+    with col2:
+        st.write(f"### {user.display_name}")
+        st.caption(user.email)
+        with st.container(horizontal=True):
+            st.badge(user.home_city, icon=":material/location_on:")
+            st.badge(user.surf_level, icon=":material/waves:")
+            if user.board_type:
+                st.badge(user.board_type, icon=":material/surfing:")
+
+    uploaded = st.file_uploader(
+        "Update profile picture", type=["png", "jpg", "jpeg"], key="avatar_upload"
+    )
+    if uploaded is not None:
+        social.update_avatar(user_id, resize_avatar(uploaded.getvalue()))
+        st.rerun()
+
+
+def _profile_tab(user_id: int, user):
     with st.form("edit_profile_form"):
         display_name = st.text_input("Display name", value=user.display_name)
         home_city = st.selectbox(
@@ -87,13 +119,13 @@ def _profile_tab(user_id: int, user):
         )
         board_index = BOARD_TYPES.index(user.board_type) if user.board_type in BOARD_TYPES else 0
         board_type = st.selectbox("Preferred board type", BOARD_TYPES, index=board_index)
-        saved = st.form_submit_button("Save changes")
+        saved = st.form_submit_button("Save changes", icon=":material/check_circle:", type="primary")
     if saved:
         social.update_profile(user_id, display_name, home_city, surf_level, board_type)
         st.success("Profile updated.")
         st.rerun()
 
-    if st.button("Log out"):
+    if st.button("Log out", icon=":material/logout:"):
         clear_remember_cookie()
         del st.session_state["user_id"]
         st.rerun()
@@ -104,7 +136,7 @@ def _password_tab(user_id: int):
         current_password = st.text_input("Current password", type="password")
         new_password = st.text_input("New password", type="password", help="At least 8 characters.")
         confirm_password = st.text_input("Confirm new password", type="password")
-        submitted = st.form_submit_button("Change password")
+        submitted = st.form_submit_button("Change password", icon=":material/key:", type="primary")
 
     if not submitted:
         return
@@ -121,7 +153,7 @@ def _password_tab(user_id: int):
 def _trips_tab(user_id: int):
     posts = social.posts_by_user(user_id)
     if not posts:
-        st.caption("No trips posted yet — plan one on the Trip Planner page or post one on Community.")
+        st.caption("No trips posted yet — plan one on the Trip planner page or post one on Community.")
         return
     for post in posts:
         with st.container(border=True):
@@ -135,10 +167,15 @@ def _trips_tab(user_id: int):
 
 def _profile_view(user_id: int):
     user = social.get_user(user_id)
-    st.write(f"### {user.display_name}")
-    st.caption(user.email)
+    _profile_header(user_id, user)
 
-    profile_tab, password_tab, trips_tab = st.tabs(["Profile", "Change password", "My trips"])
+    profile_tab, password_tab, trips_tab = st.tabs(
+        [
+            ":material/edit: Profile",
+            ":material/lock: Change password",
+            ":material/luggage: My trips",
+        ]
+    )
     with profile_tab:
         _profile_tab(user_id, user)
     with password_tab:
@@ -149,19 +186,11 @@ def _profile_view(user_id: int):
 
 def app():
     render_user_indicator()
-    st.write("## Account")
+    st.title("Account", icon=":material/account_circle:")
 
     user_id = st.session_state.get("user_id")
     if user_id:
         _profile_view(user_id)
         return
 
-    st.write(
-        "Create an account to post planned trips and follow other surfers "
-        "on the Community page."
-    )
-    login_tab, signup_tab = st.tabs(["Log in", "Sign up"])
-    with login_tab:
-        _login_form()
-    with signup_tab:
-        _signup_form()
+    _logged_out_view()

@@ -1,0 +1,35 @@
+# SurfScanner theme — an ocean/surf palette applied via Streamlit's native
+# theming rather than injected CSS, so it stays consistent across every
+# widget and survives Streamlit upgrades (see the bundled
+# "developing-with-streamlit" skill's design.md/theme.md references).
+
+[theme]
+base = "light"
+primaryColor = "#0E7C9C"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#EAF4F6"
+textColor = "#0B2B3C"
+linkColor = "#0E7C9C"
+borderColor = "#CFE3E8"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+
+redColor = "#CF3B3B"
+orangeColor = "#C97A21"
+yellowColor = "#C9A227"
+greenColor = "#1A8F6B"
+blueColor = "#0E7C9C"
+violetColor = "#6E5AAE"
+grayColor = "#5B7480"
+
+chartCategoricalColors = ["#0E7C9C", "#1A8F6B", "#C97A21", "#6E5AAE", "#CF3B3B", "#C9A227", "#5B7480"]
+chartSequentialColors = ["#F2FAFB", "#DCF0F3", "#BFE3E9", "#98D2DB", "#6DBECB", "#43A6B7", "#2C8CA0", "#1D7086", "#12546A", "#0B3A4C"]
+
+[theme.dark]
+primaryColor = "#4FC3D9"
+backgroundColor = "#0B1F2A"
+secondaryBackgroundColor = "#122F3D"
+textColor = "#E7F3F6"
+linkColor = "#4FC3D9"
+borderColor = "#1E4655"
+
+chartCategoricalColors = ["#4FC3D9", "#4FD9AE", "#E0A85C", "#A895E0", "#E07A7A", "#E0CB6B", "#93AAB4"]

@@ -69,7 +69,7 @@ def _daily_climatology(df: pd.DataFrame, ordered_month_days: list[str], value_na
 
 def app():
     render_user_indicator()
-    st.write("## Predictions")
+    st.header("Predictions", icon=":material/water:")
     st.write(
         "Pick a spot and your travel dates — we'll show the historical "
         "average wave height and wind speed for each day of your trip."
@@ -106,10 +106,10 @@ def app():
     wind_type, wind_color = si.classify_wind(wind_deg, avg_wind_speed, spot.offshore_deg)
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Avg wave height", f"{wave_hist['y'].mean():.1f} ft")
-    col2.metric("Predominant swell", si.compass_label(swell_deg))
-    col3.metric("Avg wind speed", f"{avg_wind_speed:.0f} km/h" if not wind_hist.empty else "n/a")
-    col4.metric("Predominant wind", si.compass_label(wind_deg))
+    col1.metric("Average wave height", f"{wave_hist['y'].mean():.1f} ft", help="Historical average for selected dates")
+    col2.metric("Predominant swell", si.compass_label(swell_deg), help="Primary swell direction")
+    col3.metric("Average wind speed", f"{avg_wind_speed:.0f} km/h" if not wind_hist.empty else "n/a", help="Historical average for selected dates")
+    col4.metric("Predominant wind", si.compass_label(wind_deg), help="Primary wind direction")
 
     compass_col, box_col = st.columns([2, 1])
     with compass_col:
@@ -122,17 +122,28 @@ def app():
             f"(offshore blows from the {si.compass_label(spot.offshore_deg)})."
         )
     with box_col:
-        box = {"green": st.success, "blue": st.info, "orange": st.warning, "red": st.error}[wind_color]
-        box(f"**{wind_type}**\n\nAvg wind conditions for these dates.")
+        st.subheader("Conditions", icon=":material/air:")
+        # Map wind color to badge color and icon
+        badge_color_map = {"green": "green", "blue": "blue", "orange": "orange", "red": "red"}
+        badge_icon_map = {
+            "green": ":material/check_circle:",
+            "blue": ":material/info:",
+            "orange": ":material/warning:",
+            "red": ":material/error:",
+        }
+        st.badge(wind_type, icon=badge_icon_map.get(wind_color, ""), color=badge_color_map.get(wind_color, "blue"))
+        st.caption("Average wind conditions for these dates.")
 
-    st.write(f"### {spot_name} — day by day for your trip")
+    st.subheader(f"Day-by-day forecast for {spot_name}", icon=":material/calendar_today:")
 
+    st.write("**Wave height**")
     wave_daily = _daily_climatology(wave_hist, ordered_month_days, "Wave height (ft)")
     fig_wave = px.bar(wave_daily, x="date", y="Wave height (ft)")
     fig_wave.update_layout(xaxis_title=None)
     fig_wave.update_traces(hovertemplate="%{x}<br>%{y:.1f} ft<extra></extra>")
     st.plotly_chart(fig_wave, width="stretch")
 
+    st.write("**Wind speed**")
     wind_daily = _daily_climatology(wind_hist, ordered_month_days, "Wind speed (km/h)")
     fig_wind = px.bar(wind_daily, x="date", y="Wind speed (km/h)")
     fig_wind.update_layout(xaxis_title=None)
@@ -140,6 +151,5 @@ def app():
     st.plotly_chart(fig_wind, width="stretch")
 
     st.caption(
-        "Each bar is the historical average for that calendar day — not a "
-        "day-specific forecast."
+        "Each bar is the historical average for that calendar day — not a day-specific forecast."
     )

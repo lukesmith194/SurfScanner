@@ -29,42 +29,39 @@ def app():
     )
 
     # --- Primary calls to action: Trip Planner + Community are the product. ---
-    st.markdown("<h2 style='text-align: center; margin-top: 1.5rem;'>Ready to get out there?</h2>", unsafe_allow_html=True)
+    st.header("Ready to get out there?", text_alignment="center")
 
     cta_col1, cta_col2 = st.columns(2, gap="large")
 
     with cta_col1:
         with st.container(border=True):
-            st.markdown("### 🧳 Plan your trip →")
-            st.markdown(
-                "<p style='font-size: 1.05rem;'>Tell us your dates, level, departure city "
-                "and budget — we'll rank every spot for your trip, with an estimated "
-                "cost in euros.</p>",
-                unsafe_allow_html=True,
+            st.markdown("### :material/luggage: Plan your trip →")
+            st.badge("Start here", icon=":material/arrow_forward:", color="blue")
+            st.write(
+                "Tell us your dates, level, departure city and budget — we'll "
+                "rank every spot for your trip, with an estimated cost in euros."
             )
             st.page_link(
                 nav_pages.trip_planner_page,
                 label="Start planning",
-                icon="🧳",
+                icon=":material/luggage:",
                 width="stretch",
             )
 
     with cta_col2:
         with st.container(border=True):
-            st.markdown("### 👥 Join the community →")
-            st.markdown(
-                "<p style='font-size: 1.05rem;'>Swap trip reports, tips and photos with "
-                "other surfers, and see where the community is heading next.</p>",
-                unsafe_allow_html=True,
+            st.markdown("### :material/groups: Join the community →")
+            st.badge("Popular", icon=":material/favorite:", color="orange")
+            st.write(
+                "Swap trip reports, tips and photos with other surfers, and see "
+                "where the community is heading next."
             )
             st.page_link(
                 nav_pages.community_page,
                 label="Explore Community",
-                icon="👥",
+                icon=":material/groups:",
                 width="stretch",
             )
-
-    st.divider()
 
     st.caption("Also available: reference material to help you choose a spot.")
     st.markdown(

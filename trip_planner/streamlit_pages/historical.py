@@ -8,7 +8,7 @@ from header import render_user_indicator
 
 
 def _map_section():
-    st.write("### Spot locations")
+    st.header("Spot locations", icon=":material/map:")
     st.caption(
         "Click a spot on the map to see its best months by level, and filter "
         "the charts below to just that spot."
@@ -19,7 +19,7 @@ def _map_section():
     )
     fig = px.scatter_map(
         map_df, lat="lat", lon="lon", hover_name="Spot",
-        custom_data=["Spot"], color_discrete_sequence=["#e34234"],
+        custom_data=["Spot"], color_discrete_sequence=["#CF3B3B"],
         center={"lat": 40, "lon": -12}, zoom=2.7, height=450,
     )
     fig.update_traces(marker={"size": 14}, hovertemplate="<b>%{hovertext}</b><extra></extra>")
@@ -38,7 +38,7 @@ def _map_section():
     spot = next(s for s in SPOTS if s.name == selected_name)
 
     with st.container(border=True):
-        st.write(f"#### {spot.name} — {spot.country}")
+        st.subheader(f"{spot.name} — {spot.country}", icon=":material/location_on:")
         st.write(spot.blurb)
         for bm in si.best_months_by_level(spot):
             months = ", ".join(bm.months) if bm.months else "Not typically suitable"
@@ -48,14 +48,14 @@ def _map_section():
 
 
 def _single_spot_charts(spot):
-    st.write(f"### {spot.name} — average wave height by month")
+    st.header(f"{spot.name} — average wave height by month", icon=":material/water_drop:")
     wave = si.monthly_wave_height(spot).reindex(range(1, 13))
     wave_df = pd.DataFrame({"Month": si.MONTH_NAMES, "Wave height (ft)": wave.values})
     fig_wave = px.bar(wave_df, x="Month", y="Wave height (ft)")
     fig_wave.update_traces(hovertemplate="%{x}<br>%{y:.1f} ft<extra></extra>")
     st.plotly_chart(fig_wave, width="stretch")
 
-    st.write(f"### {spot.name} — average wind speed by month")
+    st.header(f"{spot.name} — average wind speed by month", icon=":material/wind_power:")
     df = pd.read_csv(si.CSV_DIR / spot.wind_csv, parse_dates=["ds"])
     df["month"] = df["ds"].dt.month
     wind = df.groupby("month")["y"].mean().reindex(range(1, 13))
@@ -66,7 +66,7 @@ def _single_spot_charts(spot):
 
 
 def _all_spots_charts():
-    st.write("### Average wave height by month")
+    st.header("Average wave height by month", icon=":material/water_drop:")
     wave_table = si.all_spots_monthly_wave_table()
     fig_wave = px.imshow(
         wave_table, color_continuous_scale="Blues", aspect="auto",
@@ -80,7 +80,7 @@ def _all_spots_charts():
         "(El Fronton, Mosca Point, Tauro) show up clearly here."
     )
 
-    st.write("### Average wind speed by month")
+    st.header("Average wind speed by month", icon=":material/wind_power:")
     wind_table = si.all_spots_monthly_wind_table()
     fig_wind = px.imshow(
         wind_table, color_continuous_scale="Greens", aspect="auto",
@@ -93,7 +93,7 @@ def _all_spots_charts():
 
 def app():
     render_user_indicator()
-    st.write("## Historical conditions")
+    st.title("Historical conditions", icon=":material/show_chart:")
 
     selected_spot = _map_section()
 
