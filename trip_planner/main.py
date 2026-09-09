@@ -1,3 +1,4 @@
+import extra_streamlit_components as stx
 import streamlit as st
 
 import auth
@@ -8,17 +9,33 @@ st.set_page_config(page_title="SurfScanner", page_icon="🏄")
 
 init_db()
 
-# Dev convenience: auto-log-in as the seeded test account (see
-# seed_demo_data.py) on a fresh session, so Account/Community can be checked
-# without logging in by hand each time. Gated to local dev only (no
-# DATABASE_URL configured) — a real deployment always sets DATABASE_URL (see
-# db.py), so this never fires there. Without that gate, every visitor to a
-# public deployment would land pre-logged-in as the same shared account,
-# able to see and post as "Test Surfer".
-if "user_id" not in st.session_state and DATABASE_URL.startswith("sqlite"):
-    test_user_id = auth.get_user_id_by_email("test@surfscanner.com")
-    if test_user_id:
-        st.session_state["user_id"] = test_user_id
+# One CookieManager instance per run, shared via session_state so account.py
+# can set/delete the cookie on login/logout without instantiating a second
+# component with the same key in the same run (Streamlit would reject that
+# as a duplicate element).
+cookie_manager = stx.CookieManager(key="cookie_manager")
+st.session_state["_cookie_manager"] = cookie_manager
+
+if "user_id" not in st.session_state:
+    # "Remember me" — a real user who checked it on the login page gets a
+    # long-lived opaque token in a browser cookie (auth.py verifies it
+    # against its hash, never the raw value). Works both locally and once
+    # deployed, since it's tied to a specific account, not a shared one.
+    remember_token = cookie_manager.get("remember_token")
+    remembered_user_id = auth.verify_remember_token(remember_token) if remember_token else None
+    if remembered_user_id:
+        st.session_state["user_id"] = remembered_user_id
+    elif DATABASE_URL.startswith("sqlite"):
+        # Dev convenience: auto-log-in as the seeded test account (see
+        # seed_demo_data.py) on a fresh session, so Account/Community can be
+        # checked without logging in by hand each time. Gated to local dev
+        # only (no DATABASE_URL configured) — a real deployment always sets
+        # DATABASE_URL (see db.py), so this never fires there. Without that
+        # gate, every visitor to a public deployment would land
+        # pre-logged-in as the same shared account.
+        test_user_id = auth.get_user_id_by_email("test@surfscanner.com")
+        if test_user_id:
+            st.session_state["user_id"] = test_user_id
 
 # Streamlit's top navigation renders small and left-packed by default. Blow
 # it up to a full-width bar with bigger tabs — data-testid selectors are

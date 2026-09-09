@@ -9,12 +9,14 @@ bcrypt/argon2 as an extra dependency for what's still a local MVP.
 import hashlib
 import secrets
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
-from db import SessionLocal, User
+from db import RememberToken, SessionLocal, User
 
 PBKDF2_ITERATIONS = 260_000
+REMEMBER_TOKEN_DAYS = 30
 
 
 def _hash_password(password: str, salt: str) -> str:
@@ -96,3 +98,45 @@ def change_password(user_id: int, current_password: str, new_password: str) -> A
         user.password_hash = make_password_hash(new_password)
         session.commit()
         return AuthResult(ok=True, user_id=user_id)
+
+
+def _hash_token(raw_token: str) -> str:
+    return hashlib.sha256(raw_token.encode()).hexdigest()
+
+
+def create_remember_token(user_id: int) -> str:
+    """A high-entropy random token for a 'remember me' cookie. Only its hash
+    is stored — same rationale as password hashing, so a leaked database
+    can't be replayed as a working login cookie.
+    """
+    raw_token = secrets.token_urlsafe(32)
+    with SessionLocal() as session:
+        session.add(
+            RememberToken(
+                user_id=user_id,
+                token_hash=_hash_token(raw_token),
+                expires_at=datetime.utcnow() + timedelta(days=REMEMBER_TOKEN_DAYS),
+            )
+        )
+        session.commit()
+    return raw_token
+
+
+def verify_remember_token(raw_token: str) -> int | None:
+    if not raw_token:
+        return None
+    with SessionLocal() as session:
+        token = session.scalar(
+            select(RememberToken).where(RememberToken.token_hash == _hash_token(raw_token))
+        )
+        if not token or token.expires_at < datetime.utcnow():
+            return None
+        return token.user_id
+
+
+def revoke_remember_token(raw_token: str) -> None:
+    if not raw_token:
+        return
+    with SessionLocal() as session:
+        session.execute(delete(RememberToken).where(RememberToken.token_hash == _hash_token(raw_token)))
+        session.commit()

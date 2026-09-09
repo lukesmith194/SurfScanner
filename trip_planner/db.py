@@ -82,6 +82,21 @@ class User(Base):
     posts: Mapped[list["Post"]] = relationship(back_populates="author")
 
 
+class RememberToken(Base):
+    """A 'remember me' token — a random opaque value handed to the browser
+    as a cookie, with only its hash stored here (same reason passwords are
+    hashed: a leaked database row shouldn't hand over a usable credential).
+    """
+
+    __tablename__ = "remember_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class Follow(Base):
     __tablename__ = "follows"
     __table_args__ = (UniqueConstraint("follower_id", "followed_id"),)

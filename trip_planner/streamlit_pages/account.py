@@ -1,3 +1,6 @@
+import time
+from datetime import datetime, timedelta
+
 import streamlit as st
 
 import auth
@@ -7,15 +10,50 @@ from spots import DEPARTURE_CITIES
 SURF_LEVELS = ["Beginner", "Intermediate", "Advanced"]
 
 
+def _set_remember_cookie(user_id: int) -> None:
+    cookie_manager = st.session_state.get("_cookie_manager")
+    if not cookie_manager:
+        return
+    token = auth.create_remember_token(user_id)
+    cookie_manager.set(
+        "remember_token",
+        token,
+        expires_at=datetime.utcnow() + timedelta(days=auth.REMEMBER_TOKEN_DAYS),
+        key="set_remember_cookie",
+    )
+    # extra_streamlit_components writes the cookie via a round trip to the
+    # browser; an immediate st.rerun() right after .set() (as every caller
+    # here does, to switch straight to the logged-in view) can tear down the
+    # page before that round trip finishes, silently dropping the cookie.
+    # Confirmed by testing: without this, the cookie never actually persists.
+    time.sleep(0.5)
+
+
+def _clear_remember_cookie() -> None:
+    cookie_manager = st.session_state.get("_cookie_manager")
+    if not cookie_manager:
+        return
+    token = cookie_manager.get("remember_token")
+    if token:
+        # Revoke server-side first — this alone makes the cookie unusable
+        # even if the browser-side delete below doesn't finish in time.
+        auth.revoke_remember_token(token)
+        cookie_manager.delete("remember_token", key="delete_remember_cookie")
+        time.sleep(0.5)
+
+
 def _login_form():
     with st.form("login_form"):
         email = st.text_input("Email")
         password = st.text_input("Password", type="password")
+        remember_me = st.checkbox("Remember me", value=True)
         submitted = st.form_submit_button("Log in")
     if submitted:
         result = auth.log_in(email, password)
         if result.ok:
             st.session_state["user_id"] = result.user_id
+            if remember_me:
+                _set_remember_cookie(result.user_id)
             st.rerun()
         else:
             st.error(result.error)
@@ -33,6 +71,7 @@ def _signup_form():
         result = auth.sign_up(email, password, display_name, home_city, surf_level)
         if result.ok:
             st.session_state["user_id"] = result.user_id
+            _set_remember_cookie(result.user_id)
             st.rerun()
         else:
             st.error(result.error)
@@ -56,6 +95,7 @@ def _profile_tab(user_id: int, user):
         st.rerun()
 
     if st.button("Log out"):
+        _clear_remember_cookie()
         del st.session_state["user_id"]
         st.rerun()
 
