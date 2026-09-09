@@ -25,6 +25,16 @@ def update_profile(user_id: int, display_name: str, home_city: str, surf_level: 
         session.commit()
 
 
+def update_avatar(user_id: int, avatar_png: bytes | None) -> None:
+    """avatar_png should already be a resized PNG (see account.py) — this
+    just stores whatever bytes it's given.
+    """
+    with SessionLocal() as session:
+        user = session.get(User, user_id)
+        user.avatar = avatar_png
+        session.commit()
+
+
 def list_other_users(exclude_user_id: int) -> list[User]:
     with SessionLocal() as session:
         return list(

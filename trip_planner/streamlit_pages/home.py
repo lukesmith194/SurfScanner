@@ -3,6 +3,7 @@ from pathlib import Path
 import streamlit as st
 from PIL import Image
 
+from header import render_user_indicator
 from spots import SPOTS
 
 # Absolute, not "../images" — that was relative to the process's current
@@ -12,6 +13,7 @@ IMAGES_DIR = Path(__file__).resolve().parent.parent.parent / "images"
 
 
 def app():
+    render_user_indicator()
     st.title("SurfScanner")
     st.write(
         "Welcome to SurfScanner, the perfect platform for surfers to plan "

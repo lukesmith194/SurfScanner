@@ -8,6 +8,7 @@ import streamlit as st
 import spot_insights as si
 from recommender import date_range_month_days, load_series
 from spots import SPOTS
+from header import render_user_indicator
 
 SPOT_BY_NAME = {s.name: s for s in SPOTS}
 
@@ -67,6 +68,7 @@ def _daily_climatology(df: pd.DataFrame, ordered_month_days: list[str], value_na
 
 
 def app():
+    render_user_indicator()
     st.write("## Predictions")
     st.write(
         "Pick a spot and your travel dates — we'll show the historical "

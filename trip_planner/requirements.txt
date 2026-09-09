@@ -5,3 +5,4 @@ requests
 sqlalchemy
 psycopg2-binary
 extra-streamlit-components
+Pillow

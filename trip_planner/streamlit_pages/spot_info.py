@@ -7,6 +7,7 @@ from PIL import Image
 
 import spot_insights as si
 from spots import SPOTS
+from header import render_user_indicator
 
 # Absolute, not "../images" — that was relative to the process's current
 # working directory, which is trip_planner/ locally (so it happened to work)
@@ -18,6 +19,7 @@ CURRENT_MONTH = datetime.date.today().month
 
 
 def app():
+    render_user_indicator()
     st.write(f"## The {len(SPOTS)} spots")
     st.write(
         "Our Europe spot list — each one has historical wave and wind data "

@@ -2,6 +2,7 @@ import extra_streamlit_components as stx
 import streamlit as st
 
 import auth
+import nav_pages
 from db import DATABASE_URL, init_db
 from streamlit_pages import account, community, historical, home, predictions, spot_info, trip_planner
 
@@ -68,14 +69,27 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+home_page = st.Page(home.app, title="Home", icon="🏠", url_path="home", default=True)
+account_page = st.Page(account.app, title="Account", icon="👤", url_path="account")
 pages = [
-    st.Page(home.app, title="Home", icon="🏠", url_path="home", default=True),
+    home_page,
     st.Page(spot_info.app, title="Spot info", icon="🌊", url_path="spot-info"),
     st.Page(historical.app, title="Historical", icon="📊", url_path="historical"),
     st.Page(predictions.app, title="Predictions", icon="🔮", url_path="predictions"),
     st.Page(trip_planner.app, title="Trip Planner", icon="🧳", url_path="trip-planner"),
     st.Page(community.app, title="Community", icon="👥", url_path="community"),
-    st.Page(account.app, title="Account", icon="👤", url_path="account"),
+    account_page,
 ]
 
+# Shared so streamlit_pages/*.py (via header.py) and account.py's post-login
+# redirect can target these by their actual Page object — see nav_pages.py.
+nav_pages.home_page = home_page
+nav_pages.account_page = account_page
+
+# st.navigation(...).run() must stay a single chained call — splitting it
+# across two statements (e.g. `nav = st.navigation(...)` then `nav.run()`
+# later, even with nothing else in between) was tried here to render a
+# shared header before .run(), but it silently broke direct-URL routing to
+# every non-default page. Each page renders its own header instead — see
+# header.py and streamlit_pages/*.py.
 st.navigation(pages, position="top").run()

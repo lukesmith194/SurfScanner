@@ -8,9 +8,11 @@ from accommodation import accommodation_options
 from flights import travel_options
 from recommender import recommend
 from spots import DEPARTURE_AIRPORTS, DEPARTURE_CITIES
+from header import render_user_indicator
 
 
 def app():
+    render_user_indicator()
     st.write("## Trip Planner")
     st.write(
         "Pick your dates, level, home city and budget, and we'll rank the "

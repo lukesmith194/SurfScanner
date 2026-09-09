@@ -23,11 +23,14 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    LargeBinary,
     String,
     UniqueConstraint,
     create_engine,
     func,
+    text,
 )
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -78,6 +81,11 @@ class User(Base):
     home_city: Mapped[str] = mapped_column(String(80))
     surf_level: Mapped[str] = mapped_column(String(20))  # Beginner/Intermediate/Advanced
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    # PNG bytes, resized to a small square thumbnail — stored in the
+    # database rather than on disk, since the app's filesystem isn't
+    # guaranteed to persist across restarts/redeploys (see the DATABASE_URL
+    # note above; same reasoning applies to any uploaded file).
+    avatar: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
 
     posts: Mapped[list["Post"]] = relationship(back_populates="author")
 
@@ -156,3 +164,20 @@ class Comment(Base):
 
 def init_db() -> None:
     Base.metadata.create_all(engine)
+    _ensure_avatar_column()
+
+
+def _ensure_avatar_column() -> None:
+    """create_all() only creates missing tables, not missing columns on a
+    table that already exists — and the production database already had a
+    users table before `avatar` was added. No Alembic in this project, so:
+    a one-off, idempotent ALTER TABLE, ignoring the "already exists" error
+    on every run after the first.
+    """
+    column_type = "BYTEA" if not DATABASE_URL.startswith("sqlite") else "BLOB"
+    with engine.connect() as conn:
+        try:
+            conn.execute(text(f"ALTER TABLE users ADD COLUMN avatar {column_type}"))
+            conn.commit()
+        except (OperationalError, ProgrammingError):
+            conn.rollback()  # column already exists — fine

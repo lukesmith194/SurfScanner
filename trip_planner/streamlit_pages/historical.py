@@ -4,6 +4,7 @@ import streamlit as st
 
 import spot_insights as si
 from spots import SPOTS
+from header import render_user_indicator
 
 
 def _map_section():
@@ -91,6 +92,7 @@ def _all_spots_charts():
 
 
 def app():
+    render_user_indicator()
     st.write("## Historical conditions")
 
     selected_spot = _map_section()

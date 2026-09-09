@@ -4,6 +4,7 @@ import streamlit as st
 
 import social
 from spots import SPOTS
+from header import render_user_indicator
 
 SPOT_NAMES = [s.name for s in SPOTS]
 
@@ -111,6 +112,7 @@ def _find_surfers(user_id: int):
 
 
 def app():
+    render_user_indicator()
     st.write("## Community")
 
     user_id = st.session_state.get("user_id")
