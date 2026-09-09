@@ -165,6 +165,7 @@ class Comment(Base):
 def init_db() -> None:
     Base.metadata.create_all(engine)
     _ensure_avatar_column()
+    _ensure_rls_enabled()
 
 
 def _ensure_avatar_column() -> None:
@@ -181,3 +182,31 @@ def _ensure_avatar_column() -> None:
             conn.commit()
         except (OperationalError, ProgrammingError):
             conn.rollback()  # column already exists — fine
+
+
+_RLS_TABLES = ("users", "follows", "posts", "post_interest", "comments", "remember_tokens")
+
+
+def _ensure_rls_enabled() -> None:
+    """Supabase (and anything else fronted by PostgREST) auto-exposes every
+    table in the public schema over a REST API using the project's anon key
+    — regardless of whether the connecting app actually uses that API. This
+    app never does; it talks to Postgres directly over the wire protocol via
+    DATABASE_URL. Left as-is, that REST API sat open with no RLS, meaning
+    anyone with the anon key could read users.password_hash and
+    remember_tokens.token_hash straight from Supabase's dashboard/API.
+
+    Enabling RLS with zero policies denies PostgREST's anon/authenticated
+    roles entirely (default-deny with no policies), while leaving this
+    app's own access untouched: Postgres never enforces RLS against a
+    table's owner (the role DATABASE_URL connects as, since it's the one
+    that created these tables) unless FORCE ROW LEVEL SECURITY is also set,
+    which this deliberately does not do. A no-op on SQLite, where RLS/
+    PostgREST don't apply.
+    """
+    if DATABASE_URL.startswith("sqlite"):
+        return
+    with engine.connect() as conn:
+        for table in _RLS_TABLES:
+            conn.execute(text(f"ALTER TABLE public.{table} ENABLE ROW LEVEL SECURITY"))
+        conn.commit()
