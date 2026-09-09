@@ -18,6 +18,14 @@ IMAGE_CREDITS = json.loads(CREDITS_PATH.read_text()) if CREDITS_PATH.exists() el
 CURRENT_MONTH = datetime.date.today().month
 
 
+def base_country(country: str) -> str:
+    """Normalize a spot's `country` field to its top-level country name.
+
+    e.g. "Spain (Basque Country)" -> "Spain", "UK (Cornwall)" -> "UK".
+    """
+    return country.split("(")[0].strip()
+
+
 def app():
     render_user_indicator()
     st.write(f"## The {len(SPOTS)} spots")
@@ -26,7 +34,37 @@ def app():
         "backing its recommendations."
     )
 
-    for spot in SPOTS:
+    search = st.text_input("Search spots by name or country")
+
+    countries = sorted({base_country(spot.country) for spot in SPOTS})
+    continents = sorted({spot.continent for spot in SPOTS})
+    col_country, col_continent = st.columns(2)
+    with col_country:
+        selected_countries = st.multiselect("Filter by country", countries)
+    with col_continent:
+        selected_continents = st.multiselect("Filter by continent", continents)
+
+    with st.expander("Spots by country"):
+        for country in countries:
+            names = [s.name for s in SPOTS if base_country(s.country) == country]
+            st.write(f"**{country}** ({len(names)}): {', '.join(names)}")
+
+    def matches(spot) -> bool:
+        if search:
+            needle = search.lower()
+            if needle not in spot.name.lower() and needle not in spot.country.lower():
+                return False
+        if selected_countries and base_country(spot.country) not in selected_countries:
+            return False
+        if selected_continents and spot.continent not in selected_continents:
+            return False
+        return True
+
+    filtered_spots = [spot for spot in SPOTS if matches(spot)]
+    if not filtered_spots:
+        st.info("No spots match your search/filters.")
+
+    for spot in filtered_spots:
         st.write(f"### {spot.name} — {spot.country}")
         if spot.image:
             try:
@@ -40,6 +78,10 @@ def app():
         st.write(spot.blurb)
         if spot.learn_more_url:
             st.markdown(f"[Learn more ↗]({spot.learn_more_url})")
+        if spot.recommended_boards:
+            st.write(f"**Recommended board:** {', '.join(spot.recommended_boards)}")
+        if spot.forecast_url:
+            st.markdown(f"[Check live forecast ↗]({spot.forecast_url})")
 
         temp_c, wetsuit = si.current_conditions_summary(spot, CURRENT_MONTH)
         col1, col2 = st.columns(2)

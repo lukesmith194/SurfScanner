@@ -5,6 +5,7 @@ import streamlit as st
 
 import social
 from accommodation import accommodation_options
+from boards import BOARD_TYPES
 from flights import travel_options
 from recommender import recommend
 from spots import DEPARTURE_AIRPORTS, DEPARTURE_CITIES
@@ -30,9 +31,27 @@ def app():
             min_value=start_date,
         )
 
-    level = st.selectbox("Your surfing level", ["Beginner", "Intermediate", "Advanced"], index=1)
-    departure = st.selectbox("Departing from", list(DEPARTURE_CITIES.keys()))
+    levels = ["Beginner", "Intermediate", "Advanced"]
+    departure_options = list(DEPARTURE_CITIES.keys())
+    level_index = 1
+    departure_index = 0
+
+    user_id = st.session_state.get("user_id")
+    profile_user = social.get_user(user_id) if user_id else None
+    if profile_user is not None:
+        if profile_user.surf_level in levels:
+            level_index = levels.index(profile_user.surf_level)
+        if profile_user.home_city in departure_options:
+            departure_index = departure_options.index(profile_user.home_city)
+
+    level = st.selectbox("Your surfing level", levels, index=level_index)
+    departure = st.selectbox("Departing from", departure_options, index=departure_index)
     budget_eur = st.slider("Total budget for the trip (€, flights + stay)", 100, 2000, 600, step=50)
+
+    board_type_index = 0
+    if profile_user is not None and profile_user.board_type in BOARD_TYPES:
+        board_type_index = BOARD_TYPES.index(profile_user.board_type)
+    board_type = st.selectbox("Preferred board type", BOARD_TYPES, index=board_type_index)
 
     # Plain button rather than st.form_submit_button — the date fields need
     # to react to each other live (min_value above), which st.form doesn't
@@ -130,6 +149,10 @@ def app():
                         end_date=end_date,
                         level=level,
                         note="Shared from Trip Planner",
+                        board_type=board_type,
+                        total_cost_eur=rec.total_cost_eur,
+                        distance_km=rec.distance_km,
+                        nights=rec.nights,
                     )
                     st.success("Posted to Community!")
             else:

@@ -8,7 +8,7 @@ from datetime import date
 
 from sqlalchemy import delete, func, select
 
-from db import Comment, Follow, Post, PostInterest, SessionLocal, User
+from db import Comment, Follow, Post, PostInterest, PostReaction, SessionLocal, User
 
 
 def get_user(user_id: int) -> User | None:
@@ -16,12 +16,19 @@ def get_user(user_id: int) -> User | None:
         return session.get(User, user_id)
 
 
-def update_profile(user_id: int, display_name: str, home_city: str, surf_level: str) -> None:
+def update_profile(
+    user_id: int,
+    display_name: str,
+    home_city: str,
+    surf_level: str,
+    board_type: str | None = None,
+) -> None:
     with SessionLocal() as session:
         user = session.get(User, user_id)
         user.display_name = display_name.strip()
         user.home_city = home_city
         user.surf_level = surf_level
+        user.board_type = board_type
         session.commit()
 
 
@@ -71,7 +78,17 @@ def unfollow(follower_id: int, followed_id: int) -> None:
 
 
 def create_post(
-    author_id: int, spot_name: str, start_date: date, end_date: date, level: str, note: str
+    author_id: int,
+    spot_name: str,
+    start_date: date,
+    end_date: date,
+    level: str,
+    note: str,
+    *,
+    board_type: str | None = None,
+    total_cost_eur: float | None = None,
+    distance_km: float | None = None,
+    nights: int | None = None,
 ) -> None:
     with SessionLocal() as session:
         session.add(
@@ -82,6 +99,10 @@ def create_post(
                 end_date=end_date,
                 level=level,
                 note=note.strip()[:280],
+                board_type=board_type,
+                total_cost_eur=total_cost_eur,
+                distance_km=distance_km,
+                nights=nights,
             )
         )
         session.commit()
@@ -102,6 +123,10 @@ class FeedPost:
     viewer_is_interested: bool
     is_own_post: bool
     comment_count: int
+    board_type: str | None = None
+    total_cost_eur: float | None = None
+    distance_km: float | None = None
+    nights: int | None = None
 
 
 def _enrich_posts(session, posts, viewer_id: int) -> list[FeedPost]:
@@ -128,6 +153,10 @@ def _enrich_posts(session, posts, viewer_id: int) -> list[FeedPost]:
                 viewer_is_interested=viewer_id in interested_user_ids,
                 is_own_post=post.author_id == viewer_id,
                 comment_count=comment_count,
+                board_type=post.board_type,
+                total_cost_eur=post.total_cost_eur,
+                distance_km=post.distance_km,
+                nights=post.nights,
             )
         )
     return result
@@ -163,6 +192,35 @@ def toggle_interest(post_id: int, user_id: int) -> None:
         else:
             session.add(PostInterest(post_id=post_id, user_id=user_id))
         session.commit()
+
+
+def toggle_reaction(post_id: int, user_id: int, emoji: str) -> None:
+    with SessionLocal() as session:
+        existing = session.scalar(
+            select(PostReaction).where(
+                PostReaction.post_id == post_id,
+                PostReaction.user_id == user_id,
+                PostReaction.emoji == emoji,
+            )
+        )
+        if existing:
+            session.delete(existing)
+        else:
+            session.add(PostReaction(post_id=post_id, user_id=user_id, emoji=emoji))
+        session.commit()
+
+
+def reaction_summary(post_id: int, viewer_id: int) -> dict[str, tuple[int, bool]]:
+    """Maps emoji -> (count, viewer_reacted) for all reactions on a post."""
+    with SessionLocal() as session:
+        rows = session.execute(
+            select(PostReaction.emoji, PostReaction.user_id).where(PostReaction.post_id == post_id)
+        ).all()
+    summary: dict[str, tuple[int, bool]] = {}
+    for emoji, user_id in rows:
+        count, viewer_reacted = summary.get(emoji, (0, False))
+        summary[emoji] = (count + 1, viewer_reacted or user_id == viewer_id)
+    return summary
 
 
 @dataclass

@@ -4,6 +4,7 @@ import auth
 import nav_pages
 import social
 from avatars import resize_avatar
+from boards import BOARD_TYPES
 from header import render_user_indicator
 from remember import clear_remember_cookie
 from spots import DEPARTURE_CITIES
@@ -84,9 +85,11 @@ def _profile_tab(user_id: int, user):
         surf_level = st.selectbox(
             "Your surfing level", SURF_LEVELS, index=SURF_LEVELS.index(user.surf_level)
         )
+        board_index = BOARD_TYPES.index(user.board_type) if user.board_type in BOARD_TYPES else 0
+        board_type = st.selectbox("Preferred board type", BOARD_TYPES, index=board_index)
         saved = st.form_submit_button("Save changes")
     if saved:
-        social.update_profile(user_id, display_name, home_city, surf_level)
+        social.update_profile(user_id, display_name, home_city, surf_level, board_type)
         st.success("Profile updated.")
         st.rerun()
 

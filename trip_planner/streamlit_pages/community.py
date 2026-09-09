@@ -8,6 +8,8 @@ from header import render_user_indicator
 
 SPOT_NAMES = [s.name for s in SPOTS]
 
+REACTION_EMOJI = ["🤙", "🔥", "😂", "😮", "👍"]
+
 
 def _post_form(user_id: int):
     user = social.get_user(user_id)
@@ -56,6 +58,32 @@ def _feed(user_id: int):
             if post.note:
                 st.write(post.note)
 
+            if post.total_cost_eur is not None:
+                details = []
+                if post.board_type:
+                    details.append(f"🏄 {post.board_type}")
+                if post.total_cost_eur is not None:
+                    details.append(f"€{post.total_cost_eur:,.0f} total")
+                if post.distance_km is not None:
+                    details.append(f"{post.distance_km:,.0f} km away")
+                if post.nights is not None:
+                    details.append(f"{post.nights} night(s)")
+                st.caption(" · ".join(details))
+
+            reaction_summary = social.reaction_summary(post.post_id, user_id)
+            reaction_cols = st.columns(len(REACTION_EMOJI))
+            for emoji, col in zip(REACTION_EMOJI, reaction_cols):
+                count, viewer_reacted = reaction_summary.get(emoji, (0, False))
+                label = f"{emoji} {count}" if count else emoji
+                with col:
+                    if st.button(
+                        label,
+                        key=f"react_{emoji}_{post.post_id}",
+                        type="primary" if viewer_reacted else "secondary",
+                    ):
+                        social.toggle_reaction(post.post_id, user_id, emoji)
+                        st.rerun()
+
             col1, col2 = st.columns([1, 1])
             with col1:
                 if post.is_own_post:
@@ -77,9 +105,23 @@ def _feed(user_id: int):
                             social.follow(user_id, post.author_id)
                             st.rerun()
 
-            with st.expander(f"💬 {post.comment_count} comment(s)"):
-                for comment in social.comments_for(post.post_id):
-                    st.markdown(f"**{comment.author_name}:** {comment.body}")
+            all_comments = social.comments_for(post.post_id)
+            visible_comments, hidden_comments = all_comments[:2], all_comments[2:]
+            for comment in visible_comments:
+                st.markdown(f"**{comment.author_name}:** {comment.body}")
+
+            if hidden_comments:
+                with st.expander(f"💬 View all {post.comment_count} comments"):
+                    for comment in hidden_comments:
+                        st.markdown(f"**{comment.author_name}:** {comment.body}")
+                    with st.form(f"comment_form_{post.post_id}", clear_on_submit=True):
+                        body = st.text_input(
+                            "Add a comment", max_chars=280, label_visibility="collapsed"
+                        )
+                        if st.form_submit_button("Comment"):
+                            social.add_comment(post.post_id, user_id, body)
+                            st.rerun()
+            else:
                 with st.form(f"comment_form_{post.post_id}", clear_on_submit=True):
                     body = st.text_input("Add a comment", max_chars=280, label_visibility="collapsed")
                     if st.form_submit_button("Comment"):

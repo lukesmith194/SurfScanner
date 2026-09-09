@@ -64,6 +64,18 @@ st.markdown(
     [data-testid="stTopNavLink"] [data-testid="stIconEmoji"] {
         font-size: 1.4rem;
     }
+    /* Trip Planner and Community are the app's actual product — emphasize
+       their nav tabs specifically. Streamlit renders each stTopNavLink as
+       an <a> whose href is the page's url_path, so an attribute selector
+       can target one tab without touching the generic stTopNavLink rule
+       above (verified against the built frontend JS, which sets
+       href={pageUrl} on this exact element). */
+    [data-testid="stTopNavLink"][href*="trip-planner"],
+    [data-testid="stTopNavLink"][href*="community"] {
+        font-weight: 700;
+        color: #ff4b4b;
+        border-bottom: 3px solid #ff4b4b;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -71,13 +83,17 @@ st.markdown(
 
 home_page = st.Page(home.app, title="Home", icon="🏠", url_path="home", default=True)
 account_page = st.Page(account.app, title="Account", icon="👤", url_path="account")
+trip_planner_page = st.Page(trip_planner.app, title="Trip Planner", icon="🧳", url_path="trip-planner")
+community_page = st.Page(community.app, title="Community", icon="👥", url_path="community")
 pages = [
     home_page,
+    # Trip Planner and Community are the app's actual product — placed
+    # right after Home, ahead of the more reference-y pages below.
+    trip_planner_page,
+    community_page,
     st.Page(spot_info.app, title="Spot info", icon="🌊", url_path="spot-info"),
     st.Page(historical.app, title="Historical", icon="📊", url_path="historical"),
     st.Page(predictions.app, title="Predictions", icon="🔮", url_path="predictions"),
-    st.Page(trip_planner.app, title="Trip Planner", icon="🧳", url_path="trip-planner"),
-    st.Page(community.app, title="Community", icon="👥", url_path="community"),
     account_page,
 ]
 
@@ -85,6 +101,8 @@ pages = [
 # redirect can target these by their actual Page object — see nav_pages.py.
 nav_pages.home_page = home_page
 nav_pages.account_page = account_page
+nav_pages.trip_planner_page = trip_planner_page
+nav_pages.community_page = community_page
 
 # st.navigation(...).run() must stay a single chained call — splitting it
 # across two statements (e.g. `nav = st.navigation(...)` then `nav.run()`

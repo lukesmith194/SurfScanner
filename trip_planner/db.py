@@ -86,6 +86,9 @@ class User(Base):
     # guaranteed to persist across restarts/redeploys (see the DATABASE_URL
     # note above; same reasoning applies to any uploaded file).
     avatar: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    # One of boards.BOARD_TYPES, or None if never set — used as the default
+    # board type on the Trip Planner form once set here.
+    board_type: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
     posts: Mapped[list["Post"]] = relationship(back_populates="author")
 
@@ -130,6 +133,13 @@ class Post(Base):
     level: Mapped[str] = mapped_column(String(20))
     note: Mapped[str] = mapped_column(String(280), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    # Optional snapshot of the Trip Planner recommendation this post was
+    # shared from (None for posts created directly on Community, which never
+    # had this data) — shown in the feed as extra detail beyond the note.
+    board_type: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    total_cost_eur: Mapped[float | None] = mapped_column(nullable=True)
+    distance_km: Mapped[float | None] = mapped_column(nullable=True)
+    nights: Mapped[int | None] = mapped_column(nullable=True)
 
     author: Mapped["User"] = relationship(back_populates="posts")
 
@@ -162,9 +172,28 @@ class Comment(Base):
     author: Mapped["User"] = relationship()
 
 
+class PostReaction(Base):
+    """An emoji reaction on a post — separate from PostInterest (the
+    "I'm interested in joining this trip" signal), which stays a distinct,
+    single-purpose action. A user can react to the same post with several
+    different emoji, but not the same emoji twice.
+    """
+
+    __tablename__ = "post_reactions"
+    __table_args__ = (UniqueConstraint("post_id", "user_id", "emoji"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    post_id: Mapped[int] = mapped_column(ForeignKey("posts.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    emoji: Mapped[str] = mapped_column(String(8))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 def init_db() -> None:
     Base.metadata.create_all(engine)
     _ensure_avatar_column()
+    _ensure_board_type_column()
+    _ensure_post_snapshot_columns()
     _ensure_rls_enabled()
 
 
@@ -184,7 +213,47 @@ def _ensure_avatar_column() -> None:
             conn.rollback()  # column already exists — fine
 
 
-_RLS_TABLES = ("users", "follows", "posts", "post_interest", "comments", "remember_tokens")
+def _ensure_board_type_column() -> None:
+    """Same idempotent-ALTER pattern as _ensure_avatar_column, for the
+    board_type column added to an already-existing users table.
+    """
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN board_type VARCHAR(30)"))
+            conn.commit()
+        except (OperationalError, ProgrammingError):
+            conn.rollback()  # column already exists — fine
+
+
+def _ensure_post_snapshot_columns() -> None:
+    """Same idempotent-ALTER pattern, for the Trip Planner snapshot columns
+    added to an already-existing posts table.
+    """
+    float_type = "DOUBLE PRECISION" if not DATABASE_URL.startswith("sqlite") else "FLOAT"
+    columns = (
+        ("board_type", "VARCHAR(30)"),
+        ("total_cost_eur", float_type),
+        ("distance_km", float_type),
+        ("nights", "INTEGER"),
+    )
+    for column_name, column_type in columns:
+        with engine.connect() as conn:
+            try:
+                conn.execute(text(f"ALTER TABLE posts ADD COLUMN {column_name} {column_type}"))
+                conn.commit()
+            except (OperationalError, ProgrammingError):
+                conn.rollback()  # column already exists — fine
+
+
+_RLS_TABLES = (
+    "users",
+    "follows",
+    "posts",
+    "post_interest",
+    "comments",
+    "remember_tokens",
+    "post_reactions",
+)
 
 
 def _ensure_rls_enabled() -> None:

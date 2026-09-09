@@ -8,3 +8,5 @@ objects main.py created.
 
 home_page = None
 account_page = None
+trip_planner_page = None
+community_page = None

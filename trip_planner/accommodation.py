@@ -10,14 +10,34 @@ because both sites block it:
   explicitly telegraphing it's about to start blocking framing outright,
   not something worth building on.
 
-What's verified to actually work, checked with a real (headless) browser
-rather than assumed:
+What's verified to actually work, checked with real HTTP requests against
+airbnb.com/airbnb.ie rather than assumed:
 
-- Airbnb's map search takes a bounding box (`ne_lat`/`ne_lng`/`sw_lat`/
-  `sw_lng`) plus `checkin`/`checkout`/`adults`, and it survives their
-  redirect intact across multiple test coordinates — this gives a genuine,
-  precise radius filter, which is how the "10-20km from the spot" requirement
-  below is actually enforced for Airbnb.
+- UPDATE (2026-09): the bounding-box claim below turned out to be stale.
+  Airbnb changed behaviour since it was last checked — a bare
+  `/s/homes?...&ne_lat=..&ne_lng=..&sw_lat=..&sw_lng=..` request (no place
+  name in the path, no `search_type`) now gets an HTTP 301 straight back to
+  the plain homepage `/`, silently dropping the entire search including the
+  bbox. That's the actual bug the user reported: the generated Airbnb link
+  never reached a scoped results page at all.
+- The fix verified by real `curl` requests against both www.airbnb.com and
+  www.airbnb.ie (this box round-trips through a domain-switch redirect to
+  .ie, unrelated to the bug) is to (a) put a non-empty place-name path
+  segment in front of `/homes`, e.g. `/s/Nazar%C3%A9--Portugal/homes`, and
+  (b) add `search_type=user_map_move`. With both present the request returns
+  a real 200 search-results page instead of redirecting, and the bbox is
+  what actually drives the results, not the place text: swapping the place
+  segment for a deliberately wrong/generic placeholder (`/s/Search--Location/
+  homes`) returned the *same* listings — confirmed by grepping the response
+  HTML for listing subtitles ("Flat in Nazaré", "Apartment in São Martinho do
+  Porto", "Home in Alcobaça"/"Alfeizerão"/"Cela" for the Nazaré box; "Flat in
+  Mundaka", "Apartment in Sukarrieta" for the Mundaka box) — all real towns
+  inside the requested `ne_lat/ne_lng/sw_lat/sw_lng` box and nowhere else.
+  So the place segment only exists to avoid the homepage redirect; the actual
+  scoping is still the bbox math below, now confirmed to survive into results
+  rather than just "survive the redirect" as previously (wrongly) verified.
+  `airbnb_url()` now builds that place segment from `nearby_town`/`name` so
+  the URL also reads sensibly, but any non-empty string works.
 - Booking.com's standard `ss=` (place name) + `checkin`/`checkout` pattern is
   the documented, widely-used consumer/affiliate URL shape, but in this
   sandboxed environment every request to it hit bot-detection (HTTP 202,
@@ -49,14 +69,23 @@ def airbnb_url(
     checkout: date,
     radius_km: float = ACCOMMODATION_RADIUS_KM,
     adults: int = 2,
+    place_name: str = "Search--Location",
 ) -> str:
-    """Airbnb map search bounded to a real ~radius_km box around (lat, lon)."""
+    """Airbnb map search bounded to a real ~radius_km box around (lat, lon).
+
+    `place_name` only fills a path segment Airbnb requires to avoid an
+    HTTP 301 redirect back to the plain homepage (dropping the whole
+    search) — confirmed by direct HTTP testing that the bbox, not this
+    text, is what actually scopes the results (see module docstring).
+    Any non-empty string works; pass a real place for a readable URL.
+    """
     lat_delta = radius_km / KM_PER_DEGREE_LAT
     lon_delta = radius_km / (KM_PER_DEGREE_LAT * cos(radians(lat)))
+    slug = quote((place_name or "Search--Location").replace(", ", "--").replace(" ", "-"))
     return (
-        "https://www.airbnb.com/s/homes"
+        f"https://www.airbnb.com/s/{slug}/homes"
         f"?checkin={checkin.isoformat()}&checkout={checkout.isoformat()}"
-        f"&adults={adults}"
+        f"&adults={adults}&search_type=user_map_move"
         f"&ne_lat={lat + lat_delta:.4f}&ne_lng={lon + lon_delta:.4f}"
         f"&sw_lat={lat - lat_delta:.4f}&sw_lng={lon - lon_delta:.4f}"
     )
@@ -87,7 +116,19 @@ def accommodation_options(
         AccommodationOption(
             site="Airbnb",
             label=f"Stays within ~{ACCOMMODATION_RADIUS_KM:.0f} km of {spot.name} on Airbnb ↗",
-            url=airbnb_url(spot.lat, spot.lon, start_date, end_date),
+            url=airbnb_url(
+                spot.lat,
+                spot.lon,
+                start_date,
+                end_date,
+                place_name=spot.nearby_town or spot.name,
+            ),
+            caveat=(
+                "Airbnb's own on-page filters (dates, price, etc.) may still "
+                "reshuffle or paginate results after the link lands — if the "
+                "map view ever looks off, drag/zoom it once to re-trigger "
+                f"their search within the ~{ACCOMMODATION_RADIUS_KM:.0f}km box."
+            ),
         ),
         AccommodationOption(
             site="Booking.com",

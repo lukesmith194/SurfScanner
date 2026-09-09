@@ -7,6 +7,8 @@ adding an entry here.
 
 from dataclasses import dataclass
 
+from boards import BOARD_TYPES  # noqa: F401 -- re-exported for validation by callers
+
 
 @dataclass(frozen=True)
 class Spot:
@@ -51,6 +53,20 @@ class Spot:
     # orientation. Used to classify actual wind readings as
     # offshore/onshore/cross-shore in spot_insights.py.
     offshore_deg: float = 90.0
+    # Board type(s) commonly recommended for this specific wave, most-to-
+    # least suited. Strings must come from boards.BOARD_TYPES.
+    recommended_boards: tuple[str, ...] = ()
+    # Live forecast page for this spot (surf-forecast.com preferred over
+    # Windguru since it's surf-specific) — a real, verified URL only. Left
+    # blank ("") where a search didn't turn up a confirmed page. This is
+    # distinct from learn_more_url, which points at background/history
+    # sources (Wikipedia, WSL, etc), not live conditions.
+    forecast_url: str = ""
+    # Continent this spot is on. Trivially "Europe" for all 14 spots today,
+    # but kept as a real field (set explicitly below, not just via this
+    # default) so a country/continent breakdown UI works correctly if a
+    # non-European spot is ever added.
+    continent: str = "Europe"
 
 
 SPOTS = [
@@ -73,6 +89,9 @@ SPOTS = [
         nearby_town="Nazaré, Portugal",
         learn_more_url="https://en.wikipedia.org/wiki/Praia_do_Norte_(Nazar%C3%A9)",
         offshore_deg=90,
+        recommended_boards=("Shortboard",),
+        forecast_url="https://www.surf-forecast.com/breaks/Nazare/forecasts/latest",
+        continent="Europe",
     ),
     Spot(
         name="Mundaka",
@@ -92,6 +111,9 @@ SPOTS = [
         nearby_town="Mundaka, Spain",
         learn_more_url="https://en.wikipedia.org/wiki/Mundaka_wave",
         offshore_deg=180,
+        recommended_boards=("Shortboard", "Fish"),
+        forecast_url="https://www.surf-forecast.com/breaks/Mundaka/forecasts/latest",
+        continent="Europe",
     ),
     Spot(
         name="El Fronton",
@@ -111,6 +133,9 @@ SPOTS = [
         nearby_town="Gran Canaria, Spain",
         learn_more_url="https://www.stormrider.surf/break/el-fronton",
         offshore_deg=180,
+        recommended_boards=("Bodyboard", "Shortboard"),
+        forecast_url="https://www.surf-forecast.com/breaks/El-Fronton/forecasts/latest",
+        continent="Europe",
     ),
     Spot(
         name="Mosca Point",
@@ -129,6 +154,9 @@ SPOTS = [
         nearby_town="Gran Canaria, Spain",
         learn_more_url="https://www.surf-forecast.com/breaks/Mosca-Point",
         offshore_deg=0,
+        recommended_boards=("Funboard/Mini-mal", "Shortboard", "Longboard"),
+        forecast_url="https://www.surf-forecast.com/breaks/Mosca-Point/forecasts/latest",
+        continent="Europe",
     ),
     Spot(
         name="Tauro",
@@ -143,6 +171,8 @@ SPOTS = [
         airport_iata="LPA",
         nearby_town="Gran Canaria, Spain",
         offshore_deg=90,
+        recommended_boards=("Shortboard",),
+        continent="Europe",
     ),
     # Below: spots added via fetch_new_spots.py (Open-Meteo historical marine
     # + weather data, 2022-2024 — see that script for why the date window
@@ -168,6 +198,9 @@ SPOTS = [
         nearby_town="Peniche, Portugal",
         learn_more_url="https://en.wikipedia.org/wiki/Supertubos",
         offshore_deg=70,
+        recommended_boards=("Shortboard",),
+        forecast_url="https://www.surf-forecast.com/breaks/Supertubos/forecasts/latest",
+        continent="Europe",
     ),
     Spot(
         name="Ribeira d'Ilhas",
@@ -188,6 +221,9 @@ SPOTS = [
         nearby_town="Ericeira, Portugal",
         learn_more_url="https://www.savethewaves.org/ericeira/",
         offshore_deg=90,
+        recommended_boards=("Shortboard", "Fish", "Funboard/Mini-mal"),
+        forecast_url="https://www.surf-forecast.com/breaks/Ribeira-Dilhas/forecasts/latest",
+        continent="Europe",
     ),
     Spot(
         name="Zarautz",
@@ -210,6 +246,9 @@ SPOTS = [
         nearby_town="Zarautz, Spain",
         learn_more_url="https://tourism.euskadi.eus/en/beaches-reservoirs-rivers/zarautz-beach/webtur00-content/en/",
         offshore_deg=180,
+        recommended_boards=("Foamboard/Soft-top", "Longboard", "Funboard/Mini-mal"),
+        forecast_url="https://www.surf-forecast.com/breaks/Zarautz/forecasts/latest",
+        continent="Europe",
     ),
     Spot(
         name="Rodiles",
@@ -224,6 +263,9 @@ SPOTS = [
         airport_iata="OVD",
         nearby_town="Villaviciosa, Spain",
         offshore_deg=180,
+        recommended_boards=("Fish", "Funboard/Mini-mal", "Shortboard"),
+        forecast_url="https://www.surf-forecast.com/breaks/Rodiles/forecasts/latest",
+        continent="Europe",
     ),
     Spot(
         name="El Cotillo",
@@ -243,6 +285,9 @@ SPOTS = [
         nearby_town="El Cotillo, Spain",
         learn_more_url="https://thesurfatlas.com/surfing-in-canary-islands/el-cotillo-surf/",
         offshore_deg=45,
+        recommended_boards=("Foamboard/Soft-top", "Funboard/Mini-mal", "Shortboard"),
+        forecast_url="https://www.surf-forecast.com/breaks/Cotillo/forecasts/latest",
+        continent="Europe",
     ),
     Spot(
         name="Fistral Beach",
@@ -265,6 +310,9 @@ SPOTS = [
         nearby_town="Newquay, United Kingdom",
         learn_more_url="https://www.surfline.com/surf-news/newquay-where-british-surfing-was-born-and-never-stopped/1eIoRe7fYDHC3usZeASHFr",
         offshore_deg=90,
+        recommended_boards=("Shortboard", "Funboard/Mini-mal", "Longboard"),
+        forecast_url="https://www.surf-forecast.com/breaks/Fistral_North/forecasts/latest",
+        continent="Europe",
     ),
     Spot(
         name="Thurso East",
@@ -287,6 +335,9 @@ SPOTS = [
         nearby_town="Thurso, United Kingdom",
         learn_more_url="https://en.wikipedia.org/wiki/Thurso_East",
         offshore_deg=180,
+        recommended_boards=("Shortboard",),
+        forecast_url="https://www.surf-forecast.com/breaks/Thurso-East/forecasts/latest",
+        continent="Europe",
     ),
     Spot(
         name="Bundoran",
@@ -308,6 +359,9 @@ SPOTS = [
         nearby_town="Bundoran, Ireland",
         learn_more_url="https://surfholidays.com/blog/legendary-surf-spot-the-peak-bundoran/",
         offshore_deg=90,
+        recommended_boards=("Shortboard", "Fish", "Funboard/Mini-mal"),
+        forecast_url="https://www.surf-forecast.com/breaks/Bundoran/forecasts/latest",
+        continent="Europe",
     ),
     Spot(
         name="Lahinch",
@@ -326,6 +380,9 @@ SPOTS = [
         airport_iata="SNN",
         nearby_town="Lahinch, Ireland",
         offshore_deg=90,
+        recommended_boards=("Foamboard/Soft-top", "Funboard/Mini-mal", "Shortboard"),
+        forecast_url="https://www.surf-forecast.com/breaks/Lahinch/forecasts/latest",
+        continent="Europe",
     ),
 ]
 
